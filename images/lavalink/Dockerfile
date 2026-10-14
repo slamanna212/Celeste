@@ -1,14 +1,14 @@
 # syntax=docker/dockerfile:1
 
 # ---- build the yt-dlp shim (static Go binary) ------------------------------
-FROM golang:1.24 AS shim
+FROM golang:1.25 AS shim
 WORKDIR /src
 COPY shim/go.mod ./
 COPY shim/*.go ./
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/yt-dlp .
 
 # ---- fetch the LavaSrc plugin jar and verify its checksum ------------------
-FROM golang:1.24 AS plugins
+FROM golang:1.25 AS plugins
 ARG LAVASRC_VERSION=4.8.3
 # sha256 published next to the jar on the Maven repo (…/lavasrc-plugin-<ver>.jar.sha256)
 ARG LAVASRC_SHA256=4ec389bdae64fd381ee62fcdb902e15d9402823b1ad0b982bd5633619a07c1b3
