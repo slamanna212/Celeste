@@ -46,7 +46,7 @@ Nothing is exposed via Ingress or LoadBalancer. The only inbound path is your Cl
 Images: `ghcr.io/slamanna212/celeste` (bot + web), `ghcr.io/slamanna212/celeste-resolver`,
 `ghcr.io/slamanna212/celeste-lavalink`. Chart: `oci://ghcr.io/slamanna212/charts/celeste`.
 
-Local development: Node 22 (`.nvmrc`), pnpm 10. `pnpm install`, then `pnpm build | lint | typecheck | test | format:check`.
+Local development: Node 24 (`.nvmrc`), pnpm 10. `pnpm install`, then `pnpm build | lint | typecheck | test | format:check`.
 
 ## Manual setup
 

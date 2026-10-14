@@ -64,4 +64,4 @@ See spec §10. ExternalSecret `secretKey`s inside k8s secrets are free to choose
 
 ## Workspace
 
-pnpm workspace packages: `packages/shared` (`@celeste/shared`: filter presets + web API types — the contract between bot and web), `apps/bot` (`@celeste/bot`), `apps/web` (`@celeste/web`). Node 22, TypeScript strict, ESM.
+pnpm workspace packages: `packages/shared` (`@celeste/shared`: filter presets + web API types — the contract between bot and web), `apps/bot` (`@celeste/bot`), `apps/web` (`@celeste/web`). Node 24, TypeScript strict, ESM.

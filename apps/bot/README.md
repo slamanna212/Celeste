@@ -1,6 +1,6 @@
 # @celeste/bot
 
-Discord bot + web panel API for Celeste (spec sections 7-9). Node 22, TypeScript (strict, ESM), discord.js 14, lavalink-client, Drizzle + postgres.js, Fastify, pino, prom-client, zod.
+Discord bot + web panel API for Celeste (spec sections 7-9). Node 24, TypeScript (strict, ESM), discord.js 14, lavalink-client, Drizzle + postgres.js, Fastify, pino, prom-client, zod.
 
 ## Dev setup
 

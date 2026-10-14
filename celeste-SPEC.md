@@ -254,13 +254,13 @@ metrics:
 ## 7. Bot (`apps/bot`)
 
 ### Stack
-- Node 22 LTS, TypeScript strict, ESM.
+- Node 24 LTS, TypeScript strict, ESM.
 - `discord.js` v14 (latest).
 - **`lavalink-client`** (Tomato6966). **VERIFY** it supports Lavalink 4.2 voice state `channelId` (required for DAVE). If not, use the most current client that does and note it.
 - **Drizzle ORM** + `postgres` (postgres.js) driver; drizzle-kit migrations run at startup (advisory lock so it's safe).
 - **Fastify** for web API + static SPA + `/healthz` `/readyz` `/metrics` on port 8080.
 - `pino` logs, `prom-client` metrics, `zod` env validation.
-- Image: multi-stage `node:22-slim`, builds `apps/web` and copies `dist` into the bot image. Non-root.
+- Image: multi-stage `node:24-slim`, builds `apps/web` and copies `dist` into the bot image. Non-root.
 
 ### Intents
 `Guilds`, `GuildVoiceStates` only. Slash commands only.
