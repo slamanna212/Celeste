@@ -13,3 +13,4 @@ charts/*/charts/
 !.env.example
 *.log
 .DS_Store
+.claude/
