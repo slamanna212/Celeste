@@ -1,0 +1,32 @@
+Celeste {{ .Chart.AppVersion }} installed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+YouTube backend: {{ .Values.youtube.backend }}
+{{- if eq .Values.youtube.backend "ytdlp" }}
+  Lavalink -> yt-dlp shim -> {{ include "celeste.fullname" . }}-resolver (+ bgutil {{ .Values.resolver.bgutilVersion }} sidecar).
+  Keep resolver.bgutilVersion equal to the bgutil-ytdlp-pot-provider pin in apps/resolver.
+{{- else }}
+  Lavalink youtube-plugin {{ .Values.youtube.plugin.version }} -> {{ include "celeste.fullname" . }}-yt-cipher. Needs egress to maven.lavalink.dev at Lavalink startup.
+{{- end }}
+
+Prerequisites (not installed by this chart): CloudNativePG operator, External Secrets Operator with
+{{ .Values.externalSecrets.storeKind }} "{{ .Values.externalSecrets.storeName }}", k8up (for backups).
+
+Check:
+  kubectl -n {{ .Release.Namespace }} get cluster.postgresql.cnpg.io,externalsecret,pods
+  kubectl -n {{ .Release.Namespace }} logs deploy/{{ include "celeste.fullname" . }}-bot
+
+Point your Cloudflare Tunnel public hostname at:
+  http://{{ include "celeste.fullname" . }}-bot.{{ .Release.Namespace }}.svc:{{ .Values.bot.webPort }}
+Do NOT route port {{ .Values.bot.metricsPort }} (health/metrics).
+{{- if .Values.networkPolicy.enabled }}
+{{- if not (or .Values.networkPolicy.tunnelNamespace .Values.networkPolicy.tunnelPodLabels) }}
+
+WARNING: networkPolicy.tunnelNamespace is empty, so no ingress to the bot web port {{ .Values.bot.webPort }} is allowed.
+{{- end }}
+{{- end }}
+{{- if .Values.postgres.k8up.enabled }}
+
+Backups: pg_dump runs through k8up annotations on the Postgres pod; make sure a k8up Schedule exists in this namespace.
+Verify that the Postgres PVC carries k8up.io/backup=false:
+  kubectl -n {{ .Release.Namespace }} get pvc -l cnpg.io/cluster={{ include "celeste.pgName" . }} -o jsonpath='{.items[*].metadata.annotations}'
+{{- end }}

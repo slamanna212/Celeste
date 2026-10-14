@@ -1,0 +1,127 @@
+{{- $fn := include "celeste.fullname" . -}}
+{{- $ctx := dict "root" . "component" "lavalink" -}}
+{{- $img := include "celeste.image" (dict "root" . "image" .Values.lavalink.image) -}}
+{{- $ro := .Values.lavalink.readOnlyRootFilesystem -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fn }}-lavalink
+  labels:
+    {{- include "celeste.labels" $ctx | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "celeste.selectorLabels" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "celeste.labels" $ctx | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/lavalink-configmap.yaml") . | sha256sum }}
+        {{- with .Values.lavalink.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 322
+        runAsGroup: 322
+        fsGroup: 322
+        seccompProfile:
+          type: RuntimeDefault
+      {{- include "celeste.imagePullSecrets" . | nindent 6 }}
+      {{- if $ro }}
+      initContainers:
+        # An emptyDir over /opt/Lavalink/plugins hides the LavaSrc jar baked into the image,
+        # so copy the pristine copy in first. youtube-plugin (backend=plugin) is downloaded here at startup.
+        - name: seed-plugins
+          image: {{ $img }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["sh", "-c", "cp /opt/Lavalink/baked-plugins/*.jar /opt/Lavalink/plugins/"]
+          securityContext:
+            {{- include "celeste.containerSecurityContext" . | nindent 12 }}
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {memory: 64Mi}
+          volumeMounts:
+            - {name: plugins, mountPath: /opt/Lavalink/plugins}
+      {{- end }}
+      containers:
+        - name: lavalink
+          image: {{ $img }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: {{ $ro }}
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: http
+              containerPort: 2333
+          env:
+            - name: _JAVA_OPTIONS
+              value: {{ .Values.lavalink.javaOptions | quote }}
+            - name: RESOLVER_URL
+              value: http://{{ $fn }}-resolver:8080
+            {{- with .Values.lavalink.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ $fn }}-lavalink
+          # Every Lavalink REST route except /metrics needs the password header, so probes are TCP only.
+          livenessProbe:
+            tcpSocket: {port: http}
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 4
+          readinessProbe:
+            tcpSocket: {port: http}
+            periodSeconds: 10
+            timeoutSeconds: 3
+          startupProbe:
+            tcpSocket: {port: http}
+            periodSeconds: 3
+            failureThreshold: 60 # the plugin backend downloads youtube-plugin before listening
+          resources:
+            {{- toYaml .Values.lavalink.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /opt/Lavalink/application.yml
+              subPath: application.yml
+              readOnly: true
+            {{- if $ro }}
+            - {name: plugins, mountPath: /opt/Lavalink/plugins}
+            - {name: logs, mountPath: /opt/Lavalink/logs}
+            - {name: tmp, mountPath: /tmp}
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ $fn }}-lavalink
+        {{- if $ro }}
+        - {name: plugins, emptyDir: {}}
+        - {name: logs, emptyDir: {}}
+        - {name: tmp, emptyDir: {}}
+        {{- end }}
+      {{- include "celeste.scheduling" .Values.lavalink | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fn }}-lavalink
+  labels:
+    {{- include "celeste.labels" $ctx | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "celeste.selectorLabels" $ctx | nindent 4 }}
+  ports:
+    - name: http
+      port: 2333
+      targetPort: http

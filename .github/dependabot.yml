@@ -1,0 +1,49 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+
+  # pnpm workspaces are handled by the npm ecosystem (detects pnpm-lock.yaml).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm-minor-patch:
+        update-types: [minor, patch]
+
+  # Includes yt-dlp and the bgutil-ytdlp-pot-provider plugin. The bgutil sidecar
+  # image version (chart value) must be bumped together with the pip plugin.
+  - package-ecosystem: pip
+    directory: /apps/resolver
+    schedule:
+      interval: weekly
+    groups:
+      pip-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: gomod
+    directory: /images/lavalink/shim
+    schedule:
+      interval: weekly
+    groups:
+      go-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directory: /apps/bot
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /apps/resolver
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /images/lavalink
+    schedule:
+      interval: weekly

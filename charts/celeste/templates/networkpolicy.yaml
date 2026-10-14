@@ -1,0 +1,154 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- $fn := include "celeste.fullname" . -}}
+{{- $np := .Values.networkPolicy -}}
+{{- $mon := and .Values.metrics.serviceMonitor.enabled $np.monitoringNamespace -}}
+{{- /* Egress is unrestricted. Kubelet probes are not matched by pod selectors: Cilium allows host->pod probe traffic by default; on other CNIs add a rule for your node CIDR. */ -}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fn }}-lavalink
+  labels:
+    {{- include "celeste.labels" (dict "root" . "component" "lavalink") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "celeste.selectorLabels" (dict "root" . "component" "lavalink") | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "celeste.selectorLabels" (dict "root" . "component" "bot") | nindent 14 }}
+        {{- if $mon }}
+        {{- include "celeste.monitoringPeer" $np.monitoringNamespace | nindent 8 }}
+        {{- end }}
+      ports:
+        - {protocol: TCP, port: 2333}
+{{- if eq .Values.youtube.backend "ytdlp" }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fn }}-resolver
+  labels:
+    {{- include "celeste.labels" (dict "root" . "component" "resolver") | nindent 4 }}
+spec:
+  # Only 8080 is allowed in; the bgutil sidecar (4416) is additionally bound to the pod's loopback.
+  podSelector:
+    matchLabels:
+      {{- include "celeste.selectorLabels" (dict "root" . "component" "resolver") | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "celeste.selectorLabels" (dict "root" . "component" "lavalink") | nindent 14 }}
+        {{- if $mon }}
+        {{- include "celeste.monitoringPeer" $np.monitoringNamespace | nindent 8 }}
+        {{- end }}
+      ports:
+        - {protocol: TCP, port: 8080}
+{{- end }}
+{{- if include "celeste.ytCipherEnabled" . }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fn }}-yt-cipher
+  labels:
+    {{- include "celeste.labels" (dict "root" . "component" "yt-cipher") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "celeste.selectorLabels" (dict "root" . "component" "yt-cipher") | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "celeste.selectorLabels" (dict "root" . "component" "lavalink") | nindent 14 }}
+        {{- if $mon }}
+        {{- include "celeste.monitoringPeer" $np.monitoringNamespace | nindent 8 }}
+        {{- end }}
+      ports:
+        - {protocol: TCP, port: {{ .Values.ytCipher.port }}}
+{{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fn }}-postgres
+  labels:
+    {{- include "celeste.labels" (dict "root" . "component" "postgres") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: {{ include "celeste.pgName" . }}
+  policyTypes: [Ingress]
+  ingress:
+    # Application traffic.
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "celeste.selectorLabels" (dict "root" . "component" "bot") | nindent 14 }}
+        # Replication / instance-to-instance traffic inside the cluster.
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: {{ include "celeste.pgName" . }}
+      ports:
+        - {protocol: TCP, port: 5432}
+    # CNPG operator -> instance manager status (8000) and PostgreSQL (5432).
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $np.cnpgOperatorNamespace }}
+          podSelector:
+            matchLabels:
+              {{- toYaml $np.cnpgOperatorPodLabels | nindent 14 }}
+      ports:
+        - {protocol: TCP, port: 8000}
+        - {protocol: TCP, port: 5432}
+    {{- if and .Values.postgres.monitoring.podMonitor.enabled $np.monitoringNamespace }}
+    - from:
+        {{- include "celeste.monitoringPeer" $np.monitoringNamespace | nindent 8 }}
+      ports:
+        - {protocol: TCP, port: 9187}
+    {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fn }}-bot
+  labels:
+    {{- include "celeste.labels" (dict "root" . "component" "bot") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "celeste.selectorLabels" (dict "root" . "component" "bot") | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    {{- if or $np.tunnelNamespace $np.tunnelPodLabels }}
+    # Web panel: only from the Cloudflare tunnel connector.
+    - from:
+        - {{- if $np.tunnelNamespace }}
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $np.tunnelNamespace }}
+          {{- end }}
+          {{- if $np.tunnelPodLabels }}
+          podSelector:
+            matchLabels:
+              {{- toYaml $np.tunnelPodLabels | nindent 14 }}
+          {{- end }}
+      ports:
+        - {protocol: TCP, port: {{ .Values.bot.webPort }}}
+    {{- end }}
+    {{- if $np.monitoringNamespace }}
+    # Metrics/health: only from the monitoring namespace.
+    - from:
+        {{- include "celeste.monitoringPeer" $np.monitoringNamespace | nindent 8 }}
+      ports:
+        - {protocol: TCP, port: {{ .Values.bot.metricsPort }}}
+    {{- end }}
+{{- end }}

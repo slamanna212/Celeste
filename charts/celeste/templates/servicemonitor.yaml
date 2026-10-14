@@ -1,0 +1,30 @@
+{{- if .Values.metrics.serviceMonitor.enabled }}
+{{- $fn := include "celeste.fullname" . -}}
+{{- $sm := .Values.metrics.serviceMonitor -}}
+{{- /* Lavalink's /metrics is anonymous (RequestAuthorizationFilter exempts it), so no authorization block is needed. */ -}}
+{{- $targets := list (dict "c" "bot" "port" "metrics" "path" "/metrics") (dict "c" "lavalink" "port" "http" "path" "/metrics") -}}
+{{- if eq .Values.youtube.backend "ytdlp" }}{{- $targets = append $targets (dict "c" "resolver" "port" "http" "path" "/metrics") }}{{- end }}
+{{- if include "celeste.ytCipherEnabled" . }}{{- $targets = append $targets (dict "c" "yt-cipher" "port" "http" "path" "/metrics") }}{{- end }}
+{{- range $t := $targets }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $fn }}-{{ $t.c }}
+  labels:
+    {{- include "celeste.labels" (dict "root" $ "component" $t.c) | nindent 4 }}
+    {{- with $sm.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "celeste.selectorLabels" (dict "root" $ "component" $t.c) | nindent 6 }}
+  namespaceSelector:
+    matchNames: [{{ $.Release.Namespace }}]
+  endpoints:
+    - port: {{ $t.port }}
+      path: {{ $t.path }}
+      interval: {{ $sm.interval }}
+{{- end }}
+{{- end }}

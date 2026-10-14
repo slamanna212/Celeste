@@ -1,0 +1,36 @@
+# Example only. The real Application lives in the GitOps repo
+# (https://github.com/slamanna212/HomelabArgoCD, apps/celeste.yaml) and its values in
+# values/celeste.yaml there. Matches the style of the other apps in that repo.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: celeste
+  namespace: argocd
+  annotations:
+    # Must sync after the CloudNativePG operator and External Secrets (CRDs).
+    argocd.argoproj.io/sync-wave: '2'
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    # OCI Helm repo: repoURL has no oci:// prefix in ArgoCD.
+    - repoURL: ghcr.io/slamanna212/charts
+      chart: celeste
+      targetRevision: '0.1.0'
+      helm:
+        valueFiles:
+          - $values/values/celeste.yaml
+    - repoURL: https://github.com/slamanna212/HomelabArgoCD.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: celeste
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

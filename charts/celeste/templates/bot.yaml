@@ -1,0 +1,113 @@
+{{- include "celeste.validate" . -}}
+{{- $fn := include "celeste.fullname" . -}}
+{{- $ctx := dict "root" . "component" "bot" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fn }}-bot
+  labels:
+    {{- include "celeste.labels" $ctx | nindent 4 }}
+spec:
+  replicas: 1 # single instance: the bot owns the Discord gateway session and the player state
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "celeste.selectorLabels" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "celeste.labels" $ctx | nindent 8 }}
+      {{- with .Values.bot.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: {{ .Values.bot.terminationGracePeriodSeconds }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.bot.runAsUser }}
+        runAsGroup: {{ .Values.bot.runAsUser }}
+        seccompProfile:
+          type: RuntimeDefault
+      {{- include "celeste.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: bot
+          image: {{ include "celeste.image" (dict "root" . "image" .Values.bot.image) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- include "celeste.containerSecurityContext" . | nindent 12 }}
+          ports:
+            - name: web
+              containerPort: {{ .Values.bot.webPort }}
+            - name: metrics
+              containerPort: {{ .Values.bot.metricsPort }}
+          env:
+            - name: DISCORD_TOKEN
+              valueFrom: {secretKeyRef: {name: {{ $fn }}-bot, key: DISCORD_TOKEN}}
+            - name: LAVALINK_PASSWORD
+              valueFrom: {secretKeyRef: {name: {{ $fn }}-bot, key: LAVALINK_PASSWORD}}
+            - name: WEB_SESSION_SECRET
+              valueFrom: {secretKeyRef: {name: {{ $fn }}-bot, key: WEB_SESSION_SECRET}}
+            - name: DATABASE_URL
+              valueFrom: {secretKeyRef: {name: {{ include "celeste.pgName" . }}-app, key: uri}}
+            - name: LAVALINK_HOST
+              value: {{ $fn }}-lavalink
+            - name: LAVALINK_PORT
+              value: "2333"
+            - name: WEB_PORT
+              value: {{ .Values.bot.webPort | quote }}
+            - name: METRICS_PORT
+              value: {{ .Values.bot.metricsPort | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.bot.logLevel | quote }}
+            - name: YOUTUBE_BACKEND
+              value: {{ .Values.youtube.backend | quote }}
+            {{- if eq .Values.youtube.backend "ytdlp" }}
+            - name: RESOLVER_URL
+              value: http://{{ $fn }}-resolver:8080
+            {{- end }}
+            {{- with .Values.bot.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: {path: /readyz, port: metrics}
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          startupProbe:
+            httpGet: {path: /healthz, port: metrics}
+            periodSeconds: 3
+            failureThreshold: 40
+          resources:
+            {{- toYaml .Values.bot.resources | nindent 12 }}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- include "celeste.scheduling" .Values.bot | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fn }}-bot
+  labels:
+    {{- include "celeste.labels" $ctx | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "celeste.selectorLabels" $ctx | nindent 4 }}
+  ports:
+    - name: web
+      port: {{ .Values.bot.webPort }}
+      targetPort: web
+    - name: metrics
+      port: {{ .Values.bot.metricsPort }}
+      targetPort: metrics

@@ -1,0 +1,51 @@
+# Example values for the GitOps repo (values/celeste.yaml). Infrastructure only: nothing identifying.
+# Everything not listed here uses the chart default (see values.yaml and README.md).
+
+image:
+  tag: "" # empty = chart appVersion. Pin to e.g. "0.1.0" to decouple from the chart version.
+  pullSecret:
+    enabled: false # packages are public
+
+youtube:
+  backend: ytdlp # ytdlp (default) | plugin
+  plugin:
+    version: "1.18.2" # or a 40-char snapshot commit hash
+    oauth:
+      enabled: false
+    poToken:
+      enabled: false
+
+resolver:
+  replicas: 2
+  bgutilVersion: "2.0.2" # keep equal to the bgutil-ytdlp-pot-provider pin in apps/resolver
+  cookies:
+    enabled: false # true mounts AKV celeste-ytdlp-cookies
+
+ytCipher:
+  enabled: true # used only when youtube.backend=plugin
+
+lavalink:
+  appleMusic:
+    enabled: true
+
+postgres:
+  instances: 1
+  storage:
+    size: 5Gi
+    storageClass: longhorn
+  k8up:
+    enabled: true
+
+externalSecrets:
+  storeName: azure-keyvault
+  storeKind: ClusterSecretStore
+
+networkPolicy:
+  enabled: true
+  tunnelNamespace: cloudflared # namespace of your own cloudflared
+  monitoringNamespace: monitoring
+  cnpgOperatorNamespace: cnpg-system
+
+metrics:
+  serviceMonitor:
+    enabled: false

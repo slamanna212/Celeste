@@ -1,0 +1,21 @@
+# Bot image builds with the repo root as context.
+.git
+.github
+.claude
+**/node_modules
+**/dist
+**/coverage
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/*.tgz
+**/.env
+**/.env.*
+apps/resolver
+images
+charts
+deploy
+docs
+tools
+celeste-SPEC.md

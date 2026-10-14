@@ -1,0 +1,47 @@
+{{- $pg := include "celeste.pgName" . -}}
+{{- $ctx := dict "root" . "component" "postgres" -}}
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ $pg }}
+  labels:
+    {{- include "celeste.labels" $ctx | nindent 4 }}
+spec:
+  instances: {{ .Values.postgres.instances }}
+  {{- with .Values.postgres.imageName }}
+  imageName: {{ . }}
+  {{- end }}
+  {{- if .Values.postgres.k8up.enabled }}
+  # Applied by CNPG to the instance pods AND their PVCs.
+  #  - k8up.io/backupcommand(+container,file-extension): k8up execs pg_dump in the pod and stores stdout.
+  #  - k8up.io/backup=false: k8up skips the PVC (file-level copy of a live PGDATA is not consistent).
+  #    k8up only reads this annotation on PVCs for the file backup; the pod-level backupcommand lookup ignores it.
+  inheritedMetadata:
+    annotations:
+      k8up.io/backupcommand: {{ .Values.postgres.k8up.command | quote }}
+      k8up.io/file-extension: {{ .Values.postgres.k8up.fileExtension | quote }}
+      k8up.io/backupcommand-container: {{ .Values.postgres.k8up.container | quote }}
+      k8up.io/backup: "false"
+  {{- end }}
+  bootstrap:
+    initdb:
+      database: celeste
+      owner: celeste
+  storage:
+    size: {{ .Values.postgres.storage.size }}
+    {{- with .Values.postgres.storage.storageClass }}
+    storageClass: {{ . }}
+    {{- end }}
+  resources:
+    {{- toYaml .Values.postgres.resources | nindent 4 }}
+  {{- if or .Values.postgres.nodeSelector .Values.postgres.tolerations }}
+  affinity:
+    {{- with .Values.postgres.nodeSelector }}
+    nodeSelector:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.postgres.tolerations }}
+    tolerations:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  {{- end }}

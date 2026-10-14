@@ -1,0 +1,158 @@
+html,
+body,
+#root {
+  min-height: 100%;
+}
+body {
+  overscroll-behavior-y: none;
+}
+
+.shell-main {
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+@media (min-width: 48em) {
+  .shell-main {
+    padding-bottom: 24px;
+  }
+}
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-around;
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  background: var(--mantine-color-body);
+  border-top: 1px solid var(--mantine-color-default-border);
+  backdrop-filter: blur(12px);
+}
+@media (min-width: 48em) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
+.top-nav {
+  display: none;
+}
+@media (min-width: 48em) {
+  .top-nav {
+    display: flex;
+  }
+}
+
+.bottom-nav a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  padding: 4px 0;
+  border-radius: 10px;
+  color: var(--mantine-color-dimmed);
+  text-decoration: none;
+}
+.bottom-nav a.active {
+  color: var(--mantine-color-violet-5);
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+}
+.hero-bg {
+  position: absolute;
+  inset: -40px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(60px) saturate(1.4);
+  opacity: 0.35;
+  transform: scale(1.2);
+  pointer-events: none;
+}
+.hero-inner {
+  position: relative;
+}
+
+.artwork {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 22px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  background: var(--mantine-color-dark-6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queue-row {
+  background: var(--mantine-color-default-hover);
+  border-radius: 12px;
+  touch-action: manipulation;
+}
+.queue-row.dragging {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 5;
+  position: relative;
+}
+.drag-handle {
+  touch-action: none;
+  cursor: grab;
+}
+
+.station-card {
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease;
+}
+.station-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--mantine-color-violet-5);
+}
+
+.eq {
+  display: inline-flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 14px;
+}
+.eq i {
+  width: 3px;
+  background: var(--mantine-color-violet-5);
+  border-radius: 1px;
+  animation: eq 1s ease-in-out infinite;
+}
+.eq i:nth-child(2) {
+  animation-delay: 0.25s;
+}
+.eq i:nth-child(3) {
+  animation-delay: 0.5s;
+}
+@keyframes eq {
+  0%,
+  100% {
+    height: 3px;
+  }
+  50% {
+    height: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eq i {
+    animation: none;
+    height: 8px;
+  }
+}

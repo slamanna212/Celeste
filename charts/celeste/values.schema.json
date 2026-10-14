@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "image": {
+      "type": "object",
+      "required": ["registry"],
+      "properties": {
+        "registry": { "type": "string", "minLength": 1 },
+        "tag": { "type": "string" },
+        "pullPolicy": { "enum": ["Always", "IfNotPresent", "Never"] },
+        "pullSecret": {
+          "type": "object",
+          "properties": { "enabled": { "type": "boolean" }, "akvSecretName": { "type": "string" } }
+        }
+      }
+    },
+    "youtube": {
+      "type": "object",
+      "required": ["backend"],
+      "properties": {
+        "backend": { "enum": ["ytdlp", "plugin"] },
+        "plugin": {
+          "type": "object",
+          "properties": {
+            "version": { "type": "string", "minLength": 1 },
+            "oauth": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
+            "poToken": { "type": "object", "properties": { "enabled": { "type": "boolean" } } }
+          }
+        }
+      }
+    },
+    "resolver": {
+      "type": "object",
+      "properties": {
+        "replicas": { "type": "integer", "minimum": 1 },
+        "bgutilVersion": { "type": "string", "minLength": 1 },
+        "cookies": { "type": "object", "properties": { "enabled": { "type": "boolean" } } }
+      }
+    },
+    "ytCipher": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "image": {
+          "type": "object",
+          "properties": {
+            "digest": { "type": "string", "pattern": "^(sha256:[0-9a-f]{64})?$" }
+          }
+        }
+      }
+    },
+    "lavalink": {
+      "type": "object",
+      "properties": {
+        "appleMusic": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
+        "readOnlyRootFilesystem": { "type": "boolean" }
+      }
+    },
+    "postgres": {
+      "type": "object",
+      "properties": {
+        "instances": { "type": "integer", "minimum": 1 },
+        "storage": {
+          "type": "object",
+          "required": ["size"],
+          "properties": { "size": { "type": "string", "minLength": 1 }, "storageClass": { "type": "string" } }
+        },
+        "k8up": { "type": "object", "properties": { "enabled": { "type": "boolean" } } }
+      }
+    },
+    "externalSecrets": {
+      "type": "object",
+      "properties": {
+        "storeName": { "type": "string", "minLength": 1 },
+        "storeKind": { "enum": ["ClusterSecretStore", "SecretStore"] }
+      }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "tunnelNamespace": { "type": "string" },
+        "monitoringNamespace": { "type": "string" }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "serviceMonitor": { "type": "object", "properties": { "enabled": { "type": "boolean" } } }
+      }
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{{- if include "celeste.ytCipherEnabled" . }}
+{{- $fn := include "celeste.fullname" . -}}
+{{- $ctx := dict "root" . "component" "yt-cipher" -}}
+{{- $i := .Values.ytCipher.image -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fn }}-yt-cipher
+  labels:
+    {{- include "celeste.labels" $ctx | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "celeste.selectorLabels" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "celeste.labels" $ctx | nindent 8 }}
+      {{- with .Values.ytCipher.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      {{- include "celeste.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: yt-cipher
+          image: {{ $i.repository }}:{{ $i.tag }}{{ if $i.digest }}@{{ $i.digest }}{{ end }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          securityContext:
+            {{- include "celeste.containerSecurityContext" . | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.ytCipher.port }}
+          env:
+            - {name: PORT, value: {{ .Values.ytCipher.port | quote }}}
+            - {name: MAX_THREADS, value: {{ .Values.ytCipher.maxThreads | quote }}}
+            - {name: OVERRIDE_PLAYER_VARIANT, value: {{ .Values.ytCipher.playerVariant | quote }}}
+            - name: API_TOKEN
+              valueFrom: {secretKeyRef: {name: {{ $fn }}-yt-cipher, key: API_TOKEN}}
+            {{- with .Values.ytCipher.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          # Distroless, no health endpoint; /metrics is unauthenticated.
+          livenessProbe:
+            httpGet: {path: /metrics, port: http}
+            periodSeconds: 20
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet: {path: /metrics, port: http}
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.ytCipher.resources | nindent 12 }}
+          volumeMounts:
+            - {name: player-cache, mountPath: /home/nonroot/.cache}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: player-cache, emptyDir: {}}
+        - {name: tmp, emptyDir: {}}
+      {{- include "celeste.scheduling" .Values.ytCipher | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fn }}-yt-cipher
+  labels:
+    {{- include "celeste.labels" $ctx | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "celeste.selectorLabels" $ctx | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.ytCipher.port }}
+      targetPort: http
+{{- end }}

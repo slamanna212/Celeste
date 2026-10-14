@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+.venv
+__pycache__
+pnpm-lock.yaml
+*.tgz
+charts/
+apps/resolver/
+images/
+celeste-SPEC.md
+.claude

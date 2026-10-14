@@ -1,0 +1,181 @@
+# Celeste chart defaults. Infrastructure values only: no guild/user IDs, panel hostname or radio URLs
+# (those live in the database and are set with /admin commands).
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  registry: ghcr.io/slamanna212
+  # Global tag for bot, lavalink and resolver. Empty = chart appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+  pullSecret:
+    enabled: false # packages are public; enable if the repo/packages go private
+    akvSecretName: celeste-ghcr-pull # AKV secret holding the full dockerconfigjson document
+
+youtube:
+  backend: ytdlp # ytdlp | plugin
+  plugin: # used only when backend=plugin
+    # Release version, or a 40-char commit hash of a snapshot build (then the snapshot repo is used).
+    version: "1.18.2"
+    oauth:
+      enabled: false # needs AKV celeste-yt-oauth-refresh-token (burner Google account)
+    poToken:
+      enabled: false # needs AKV celeste-yt-po-token and celeste-yt-visitor-data; only affects WEB clients
+
+bot:
+  image:
+    repository: celeste
+    tag: "" # empty = global image.tag / appVersion
+  logLevel: info
+  webPort: 8080
+  metricsPort: 9090
+  terminationGracePeriodSeconds: 30
+  # Numeric uid required for runAsNonRoot to be verifiable. Must match the user in apps/bot/Dockerfile (node = 1000).
+  runAsUser: 1000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 192Mi
+    limits:
+      memory: 512Mi # no CPU limit on purpose
+  extraEnv: []
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+lavalink:
+  image:
+    repository: celeste-lavalink
+    tag: ""
+  javaOptions: "-Xmx768m"
+  countryCode: US # Spotify / Apple Music catalogue country
+  appleMusic:
+    enabled: true # false renders applemusic: false and omits the token (the token must be JWT-shaped or Lavalink will not boot)
+  readOnlyRootFilesystem: true # emptyDirs for plugins, logs and /tmp; baked plugins are copied in by an init container
+  resources:
+    requests:
+      cpu: 250m
+      memory: 768Mi
+    limits:
+      memory: 1Gi # no CPU limit on purpose
+  extraEnv: []
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+resolver: # rendered only when youtube.backend=ytdlp
+  replicas: 2
+  image:
+    repository: celeste-resolver
+    tag: ""
+  # bgutil POT sidecar image tag. MUST equal the bgutil-ytdlp-pot-provider pip version pinned in apps/resolver.
+  bgutilVersion: "2.0.2"
+  bgutilImage: docker.io/brainicism/bgutil-ytdlp-pot-provider
+  cookies:
+    enabled: false # mounts AKV celeste-ytdlp-cookies (Netscape format) as /secrets/cookies.txt
+  execTimeoutSeconds: 30
+  maxConcurrency: 8
+  allowedUrlHosts: "youtube.com,youtu.be"
+  logLevel: info
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+  bgutilResources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  extraEnv: []
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+ytCipher: # rendered only when youtube.backend=plugin and enabled=true
+  enabled: true
+  image:
+    # Only the moving `master` tag is published upstream; pinned by digest (see VERIFICATION.md).
+    repository: ghcr.io/kikkia/yt-cipher
+    tag: master
+    digest: sha256:4c5ec381ff57336cfc24822d2b526a5ad7cd0171f61065a1bbc87bb736842449
+  port: 8001
+  playerVariant: IAS # OVERRIDE_PLAYER_VARIANT
+  maxThreads: 4 # worker threads (upstream default = one per host core, too many for a 512Mi limit)
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  extraEnv: []
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+postgres:
+  instances: 1 # Longhorn already replicates the volume
+  imageName: "" # empty = operator default PostgreSQL image
+  storage:
+    size: 5Gi
+    storageClass: longhorn
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+  k8up:
+    enabled: true # pg_dump via k8up application-aware backup annotations; raw PGDATA PVC excluded
+    command: "sh -c 'pg_dump --clean --if-exists -Fc celeste'"
+    fileExtension: ".dump"
+    container: postgres
+  monitoring:
+    podMonitor:
+      enabled: false # renders a PodMonitor for the instance pods (CNPG's own enablePodMonitor is deprecated)
+  nodeSelector: {}
+  tolerations: []
+
+externalSecrets:
+  storeName: azure-keyvault
+  storeKind: ClusterSecretStore
+  refreshInterval: 1h
+  # Azure Key Vault secret names.
+  akv:
+    discordToken: celeste-discord-token
+    lavalinkPassword: celeste-lavalink-password
+    spotifyClientId: celeste-spotify-client-id
+    spotifyClientSecret: celeste-spotify-client-secret
+    appleMusicToken: celeste-applemusic-token
+    webSessionSecret: celeste-web-session-secret
+    ytdlpCookies: celeste-ytdlp-cookies
+    ytOauthRefreshToken: celeste-yt-oauth-refresh-token
+    ytPoToken: celeste-yt-po-token
+    ytVisitorData: celeste-yt-visitor-data
+    ytCipherPassword: celeste-ytcipher-password
+
+networkPolicy:
+  enabled: true
+  # Namespace of your own cloudflared (allowed to reach the bot web port 8080). Empty = no namespace rule.
+  tunnelNamespace: ""
+  # Optional extra pod label selector (within tunnelNamespace if set, otherwise within this namespace).
+  tunnelPodLabels: {}
+  # Namespace of Prometheus (allowed to scrape metrics ports).
+  monitoringNamespace: monitoring
+  # Namespace and pod labels of the CloudNativePG operator.
+  cnpgOperatorNamespace: cnpg-system
+  cnpgOperatorPodLabels:
+    app.kubernetes.io/name: cloudnative-pg
+
+metrics:
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    labels: {} # e.g. release: kube-prometheus-stack

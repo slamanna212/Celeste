@@ -1,0 +1,71 @@
+# Reference Lavalink config for youtube.backend=ytdlp (default).
+# The Helm chart templates this into a ConfigMap mounted at /opt/Lavalink/application.yml.
+# Secrets are Spring ${ENV} placeholders (env names: docs/contracts.md).
+# No `lavalink.plugins` entries on purpose: LavaSrc is baked into the image at
+# /opt/Lavalink/plugins, so this backend needs NO outbound Maven access.
+server:
+  port: 2333
+  address: 0.0.0.0
+lavalink:
+  server:
+    password: "${LAVALINK_PASSWORD}"
+    sources:
+      youtube: false        # deprecated built-in source, always off
+      bandcamp: true
+      soundcloud: true
+      twitch: true
+      vimeo: false
+      nico: false
+      http: true            # direct URLs + AzuraCast
+      local: false
+    filters:
+      volume: true
+      equalizer: true
+      karaoke: true
+      timescale: true
+      tremolo: true
+      vibrato: true
+      distortion: true
+      rotation: true
+      channelMix: true
+      lowPass: true
+    bufferDurationMs: 400
+    frameBufferDurationMs: 5000
+    trackStuckThresholdMs: 10000
+    playerUpdateInterval: 5
+    resamplingQuality: LOW
+plugins:
+  lavasrc:
+    providers:
+      - 'ytsearch:"%ISRC%"'
+      - 'ytsearch:%QUERY%'
+      - 'scsearch:%QUERY%'
+    sources:
+      spotify: true
+      applemusic: true
+      ytdlp: true
+      youtube: false      # LavaSrc's own youtube search/lyrics helper; not used
+      deezer: false
+    spotify:
+      clientId: "${SPOTIFY_CLIENT_ID}"
+      clientSecret: "${SPOTIFY_CLIENT_SECRET}"
+      countryCode: "US"
+      playlistLoadLimit: 6
+      albumLoadLimit: 6
+    applemusic:
+      countryCode: "US"
+      mediaAPIToken: "${APPLE_MUSIC_MEDIA_API_TOKEN}"
+      playlistLoadLimit: 6
+      albumLoadLimit: 6
+    ytdlp:
+      path: "/usr/local/bin/yt-dlp"   # the shim; forwards argv to ${RESOLVER_URL}/v1/exec
+      searchLimit: 10
+      mixPlaylistLoadLimit: 25
+      playlistLoadLimit: 500
+      # Defaults (LavaSrc 4.8.3) -- the resolver allowlist must cover these. Only override if needed:
+      # customLoadArgs: ["-q", "--no-warnings", "--flat-playlist", "--skip-download", "-J"]
+      # customPlaybackArgs: ["-q", "--no-warnings", "-f", "bestaudio", "-J"]
+metrics:
+  prometheus:
+    enabled: true
+    endpoint: /metrics

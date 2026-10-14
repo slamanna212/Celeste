@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.tgz
+charts/*/charts/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store

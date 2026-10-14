@@ -1,0 +1,102 @@
+# Reference Lavalink config for youtube.backend=plugin.
+# The Helm chart templates this into a ConfigMap mounted at /opt/Lavalink/application.yml.
+# Requires egress to maven.lavalink.dev (youtube-plugin is downloaded at startup into
+# /opt/Lavalink/plugins, which must be writable by uid 322 and must still contain the baked
+# LavaSrc jar -- do not mount an empty volume over it without copying /opt/Lavalink/baked-plugins/*.jar in).
+# Do NOT bake/pre-place a youtube-plugin jar: Lavalink loads every jar in the plugins dir.
+server:
+  port: 2333
+  address: 0.0.0.0
+lavalink:
+  plugins:
+    # Chart value youtube.plugin.version. Release: "1.18.2" with snapshot:false.
+    # Snapshot: the full 40-char commit hash with snapshot:true, e.g.
+    #   dependency: "dev.lavalink.youtube:youtube-plugin:2be8e542d3f6f178e048dca565892684c2e40177"
+    #   snapshot: true      # -> https://maven.lavalink.dev/snapshots
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.2"
+      snapshot: false
+  server:
+    password: "${LAVALINK_PASSWORD}"
+    sources:
+      youtube: false        # built-in source must be off when using youtube-plugin
+      bandcamp: true
+      soundcloud: true
+      twitch: true
+      vimeo: false
+      nico: false
+      http: true
+      local: false
+    filters:
+      volume: true
+      equalizer: true
+      karaoke: true
+      timescale: true
+      tremolo: true
+      vibrato: true
+      distortion: true
+      rotation: true
+      channelMix: true
+      lowPass: true
+    bufferDurationMs: 400
+    frameBufferDurationMs: 5000
+    trackStuckThresholdMs: 10000
+    playerUpdateInterval: 5
+    resamplingQuality: LOW
+    youtubePlaylistLoadLimit: 6     # picked up by youtube-plugin (pages of 100)
+    timeouts:                       # recommended by yt-cipher README for remote-cipher read timeouts
+      connectTimeoutMs: 10000
+      connectionRequestTimeoutMs: 10000
+      socketTimeoutMs: 10000
+plugins:
+  lavasrc:
+    providers:
+      - 'ytsearch:"%ISRC%"'
+      - 'ytsearch:%QUERY%'
+      - 'scsearch:%QUERY%'
+    sources:
+      spotify: true
+      applemusic: true
+      ytdlp: false          # MUST be off: both it and youtube-plugin claim ytsearch: and youtube URLs
+      youtube: false
+      deezer: false
+    spotify:
+      clientId: "${SPOTIFY_CLIENT_ID}"
+      clientSecret: "${SPOTIFY_CLIENT_SECRET}"
+      countryCode: "US"
+      playlistLoadLimit: 6
+      albumLoadLimit: 6
+    applemusic:
+      countryCode: "US"
+      mediaAPIToken: "${APPLE_MUSIC_MEDIA_API_TOKEN}"
+      playlistLoadLimit: 6
+      albumLoadLimit: 6
+  youtube:
+    enabled: true
+    allowSearch: true             # enables ytsearch: and ytmsearch:
+    allowDirectVideoIds: true
+    allowDirectPlaylistIds: true
+    # Order matters. From the youtube-source README example; revisit if YouTube changes.
+    clients:
+      - MUSIC
+      - ANDROID_VR
+      - WEB
+      - WEBEMBEDDED
+    remoteCipher:
+      url: "http://${YTCIPHER_HOST:celeste-yt-cipher}:8001"   # chart: http://<r>-yt-cipher:8001
+      password: "${YTCIPHER_PASSWORD}"                         # must equal yt-cipher's API_TOKEN
+      userAgent: "celeste"
+    # OAuth is optional. Chart renders this block only when a refresh token secret is configured.
+    # (Use a burner Google account; see youtube-source README warnings.)
+    # oauth:
+    #   enabled: true
+    #   refreshToken: "${YT_OAUTH_REFRESH_TOKEN}"
+    #   skipInitialization: true
+    # PO token is optional and only affects WEB/WEBEMBEDDED. BOTH keys are required together.
+    # Not needed when OAuth is used.
+    # pot:
+    #   token: "${YT_PO_TOKEN}"
+    #   visitorData: "${YT_VISITOR_DATA}"
+metrics:
+  prometheus:
+    enabled: true
+    endpoint: /metrics

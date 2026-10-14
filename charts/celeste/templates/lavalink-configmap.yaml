@@ -1,0 +1,125 @@
+{{- $fn := include "celeste.fullname" . -}}
+{{- $ctx := dict "root" . "component" "lavalink" -}}
+{{- $plugin := eq .Values.youtube.backend "plugin" -}}
+{{- $ver := .Values.youtube.plugin.version | toString -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $fn }}-lavalink
+  labels:
+    {{- include "celeste.labels" $ctx | nindent 4 }}
+data:
+  application.yml: |
+    # Rendered by the Celeste chart for youtube.backend={{ .Values.youtube.backend }}.
+    # Secrets are Spring ${ENV} placeholders resolved from the pod environment.
+    server:
+      port: 2333
+      address: 0.0.0.0
+    lavalink:
+      {{- if $plugin }}
+      plugins:
+        {{- if regexMatch "^[0-9a-f]{40}$" $ver }}
+        - dependency: "dev.lavalink.youtube:youtube-plugin:{{ $ver }}"
+          snapshot: true
+        {{- else }}
+        - dependency: "dev.lavalink.youtube:youtube-plugin:{{ $ver }}"
+          snapshot: false
+        {{- end }}
+      {{- end }}
+      server:
+        password: "${LAVALINK_PASSWORD}"
+        sources:
+          youtube: false
+          bandcamp: true
+          soundcloud: true
+          twitch: true
+          vimeo: false
+          nico: false
+          http: true
+          local: false
+        filters:
+          volume: true
+          equalizer: true
+          karaoke: true
+          timescale: true
+          tremolo: true
+          vibrato: true
+          distortion: true
+          rotation: true
+          channelMix: true
+          lowPass: true
+        bufferDurationMs: 400
+        frameBufferDurationMs: 5000
+        trackStuckThresholdMs: 10000
+        playerUpdateInterval: 5
+        resamplingQuality: LOW
+        {{- if $plugin }}
+        youtubePlaylistLoadLimit: 6
+        timeouts:
+          connectTimeoutMs: 10000
+          connectionRequestTimeoutMs: 10000
+          socketTimeoutMs: 10000
+        {{- end }}
+    plugins:
+      lavasrc:
+        providers:
+          - 'ytsearch:"%ISRC%"'
+          - 'ytsearch:%QUERY%'
+          - 'scsearch:%QUERY%'
+        sources:
+          spotify: true
+          applemusic: {{ .Values.lavalink.appleMusic.enabled }}
+          ytdlp: {{ not $plugin }}
+          youtube: false
+          deezer: false
+        spotify:
+          clientId: "${SPOTIFY_CLIENT_ID}"
+          clientSecret: "${SPOTIFY_CLIENT_SECRET}"
+          countryCode: "{{ .Values.lavalink.countryCode }}"
+          playlistLoadLimit: 6
+          albumLoadLimit: 6
+        {{- if .Values.lavalink.appleMusic.enabled }}
+        applemusic:
+          countryCode: "{{ .Values.lavalink.countryCode }}"
+          mediaAPIToken: "${APPLE_MUSIC_MEDIA_API_TOKEN}"
+          playlistLoadLimit: 6
+          albumLoadLimit: 6
+        {{- end }}
+        {{- if not $plugin }}
+        ytdlp:
+          path: "/usr/local/bin/yt-dlp"
+          searchLimit: 10
+          mixPlaylistLoadLimit: 25
+          playlistLoadLimit: 500
+        {{- end }}
+      {{- if $plugin }}
+      youtube:
+        enabled: true
+        allowSearch: true
+        allowDirectVideoIds: true
+        allowDirectPlaylistIds: true
+        clients:
+          - MUSIC
+          - ANDROID_VR
+          - WEB
+          - WEBEMBEDDED
+        remoteCipher:
+          url: "http://{{ $fn }}-yt-cipher:{{ .Values.ytCipher.port }}"
+          password: "${YTCIPHER_PASSWORD}"
+          userAgent: "celeste"
+        {{- if .Values.youtube.plugin.oauth.enabled }}
+        oauth:
+          enabled: true
+          refreshToken: "${YT_OAUTH_REFRESH_TOKEN}"
+          skipInitialization: true
+        {{- end }}
+        {{- if .Values.youtube.plugin.poToken.enabled }}
+        pot:
+          token: "${YT_PO_TOKEN}"
+          visitorData: "${YT_VISITOR_DATA}"
+        {{- end }}
+      {{- end }}
+    metrics:
+      prometheus:
+        enabled: true
+        endpoint: /metrics

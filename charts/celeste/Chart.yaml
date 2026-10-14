@@ -1,0 +1,10 @@
+apiVersion: v2
+name: celeste
+description: Celeste, a self-hosted Discord music bot (bot + web panel, Lavalink, yt-dlp resolver, Postgres via CloudNativePG)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.27.0-0"
+home: https://github.com/slamanna212/Celeste
+sources:
+  - https://github.com/slamanna212/Celeste

@@ -1,0 +1,43 @@
+{
+  "name": "@celeste/bot",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@celeste/shared": "workspace:*",
+    "@fastify/cookie": "^11.1.3",
+    "@fastify/static": "^10.1.6",
+    "discord.js": "^14.27.0",
+    "drizzle-orm": "^0.45.4",
+    "fastify": "^5.12.7",
+    "lavalink-client": "^2.11.0",
+    "pino": "^10.4.0",
+    "postgres": "^3.4.9",
+    "prom-client": "^15.1.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.4"
+  },
+  "files": [
+    "dist",
+    "drizzle"
+  ]
+}
