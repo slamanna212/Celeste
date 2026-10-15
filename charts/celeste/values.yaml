@@ -24,10 +24,9 @@ youtube:
       enabled: false # needs AKV celeste-yt-po-token and celeste-yt-visitor-data; only affects WEB clients
   ytdlp: # used only when backend=ytdlp
     # Args LavaSrc passes to yt-dlp (via the resolver) to get the stream URL Lavalink plays. Empty = LavaSrc default.
-    # mweb + the bgutil PO token: yt-dlp's default visionos client intermittently returns URLs that 403
-    # (YouTube experiment fexp=52227522, seen 2026-10-15). The resolver allowlist must accept every flag here.
-    customPlaybackArgs:
-      ["-q", "--no-warnings", "--extractor-args", "youtube:player_client=mweb", "-f", "bestaudio", "-J"]
+    # The resolver allowlist must accept every flag here. Don't pin a player client to dodge 403s: YouTube flips
+    # which client works (visionos 403'd 2026-10-14, mweb 2026-10-15). resolver.playbackFallbackClients handles it.
+    customPlaybackArgs: []
 
 bot:
   image:
@@ -86,6 +85,9 @@ resolver: # rendered only when youtube.backend=ytdlp
   execTimeoutSeconds: 30
   maxConcurrency: 8
   allowedUrlHosts: "youtube.com,youtu.be"
+  # Playback calls: the resolver test-fetches the stream URL and, on a 403, retries yt-dlp with these
+  # player clients in order ("default" = yt-dlp's own choice). Empty string disables the check.
+  playbackFallbackClients: "default,mweb"
   logLevel: info
   resources:
     requests:

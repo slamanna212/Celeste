@@ -24,11 +24,15 @@ class Settings:
     # Command prefix used to launch yt-dlp. Overridable for tests.
     ytdlp_command: tuple[str, ...] = field(default_factory=lambda: ("python", "-m", "yt_dlp"))
     log_level: str = "INFO"
+    # Player clients retried, in order, when a playback call's stream URL is refused (403).
+    # "default" = yt-dlp's own client choice. Empty = no verification/fallback.
+    playback_clients: tuple[str, ...] = ("default", "mweb")
 
     @classmethod
     def from_env(cls) -> Settings:
         hosts = os.environ.get("ALLOWED_URL_HOSTS", "").strip()
         cmd = os.environ.get("YTDLP_COMMAND", "").strip()
+        clients = os.environ.get("PLAYBACK_FALLBACK_CLIENTS")
         return cls(
             pot_base_url=os.environ.get("POT_BASE_URL", cls.pot_base_url).rstrip("/"),
             cookies_path=os.environ.get("COOKIES_PATH", cls.cookies_path),
@@ -42,4 +46,9 @@ class Settings:
             ),
             ytdlp_command=tuple(shlex.split(cmd)) if cmd else ("python", "-m", "yt_dlp"),
             log_level=os.environ.get("LOG_LEVEL", "info").upper(),
+            playback_clients=(
+                tuple(c.strip() for c in clients.split(",") if c.strip())
+                if clients is not None
+                else cls.playback_clients
+            ),
         )

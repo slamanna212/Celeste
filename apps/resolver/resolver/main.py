@@ -21,6 +21,7 @@ from . import metrics
 from .allowlist import RejectedArgs, parse_args
 from .config import Settings
 from .logging_setup import setup_logging
+from .playback import is_playback, run_playback
 from .runner import run_ytdlp
 
 log = logging.getLogger("resolver")
@@ -92,7 +93,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         started = time.monotonic()
         metrics.IN_FLIGHT.inc()
         try:
-            result = await run_ytdlp(settings, parsed.argv)
+            if settings.playback_clients and is_playback(parsed.argv):
+                result = await run_playback(
+                    settings, parsed.argv, lambda argv, t: run_ytdlp(settings, argv, t)
+                )
+            else:
+                result = await run_ytdlp(settings, parsed.argv)
         except Exception:
             metrics.REQUESTS.labels("internal_error").inc()
             log.exception("exec failed", extra={"ytArgs": body.args})

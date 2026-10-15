@@ -30,3 +30,9 @@ IN_FLIGHT = Gauge(
 WAITING = Gauge(
     "resolver_exec_waiting", "Requests waiting for a concurrency slot.", registry=REGISTRY
 )
+PLAYBACK_PROBES = Counter(
+    "resolver_playback_probes_total",
+    "Playback stream-URL checks by player client and result (ok, 403, ytdlp_error, ...).",
+    ["client", "result"],
+    registry=REGISTRY,
+)

@@ -65,8 +65,8 @@ plugins:
       # Defaults (LavaSrc 4.8.3) -- the resolver allowlist must cover these. Only override if needed:
       # customLoadArgs: ["-q", "--no-warnings", "--flat-playlist", "--skip-download", "-J"]
       # customPlaybackArgs: ["-q", "--no-warnings", "-f", "bestaudio", "-J"]
-      # Chart default (youtube.ytdlp.customPlaybackArgs): visionos URLs intermittently 403, mweb + bgutil PO token does not.
-      customPlaybackArgs: ["-q", "--no-warnings", "--extractor-args", "youtube:player_client=mweb", "-f", "bestaudio", "-J"]
+      # No player-client pin: the resolver verifies playback URLs and falls back across clients on 403
+      # (PLAYBACK_FALLBACK_CLIENTS), since YouTube keeps flipping which client works.
 metrics:
   prometheus:
     enabled: true

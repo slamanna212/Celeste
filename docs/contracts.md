@@ -48,7 +48,7 @@ Fixed names, ports, and env vars that the bot, images, chart and CI all rely on.
 
 **Lavalink** (`images/lavalink`): `LAVALINK_PASSWORD`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `APPLE_MUSIC_MEDIA_API_TOKEN`, `RESOLVER_URL` (read by the shim), and for backend=plugin: `YTCIPHER_PASSWORD`, `YT_OAUTH_REFRESH_TOKEN` (optional), `_JAVA_OPTIONS=-Xmx768m`. Config is mounted at `/opt/Lavalink/application.yml` (verify path for the upstream image).
 
-**Resolver** (`apps/resolver`): `POT_BASE_URL` (default `http://127.0.0.1:4416`), `COOKIES_PATH` (default `/secrets/cookies.txt`), `EXEC_TIMEOUT_SECONDS` (30), `MAX_CONCURRENCY` (8), `PORT` (8080).
+**Resolver** (`apps/resolver`): `POT_BASE_URL` (default `http://127.0.0.1:4416`), `COOKIES_PATH` (default `/secrets/cookies.txt`), `EXEC_TIMEOUT_SECONDS` (30), `MAX_CONCURRENCY` (8), `PORT` (8080), `PLAYBACK_FALLBACK_CLIENTS` (`default,mweb`).
 
 ## AKV secret names
 

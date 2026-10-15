@@ -13,6 +13,7 @@ Internal HTTP service that runs `yt-dlp` on behalf of the Lavalink pod. Lavalink
 | `PORT` | `8080` | listen port |
 | `ALLOWED_URL_HOSTS` | `youtube.com,youtu.be` | hosts (and subdomains) a positional URL may use; `*` = any (SSRF guard) |
 | `LOG_LEVEL` | `info` | |
+| `PLAYBACK_FALLBACK_CLIENTS` | `default,mweb` | for playback calls (`-f ... -J <url>`), 1-byte-fetch the returned googlevideo URL; on non-2xx re-run with these `player_client`s in order within the `EXEC_TIMEOUT_SECONDS` budget. Empty = off |
 | `YTDLP_COMMAND` | `python -m yt_dlp` | override (tests) |
 
 ## API

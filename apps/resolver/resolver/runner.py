@@ -40,7 +40,10 @@ def _kill_group(proc: asyncio.subprocess.Process) -> None:
         proc.kill()
 
 
-async def run_ytdlp(settings: Settings, argv: list[str]) -> ExecResult:
+async def run_ytdlp(
+    settings: Settings, argv: list[str], budget_seconds: float | None = None
+) -> ExecResult:
+    timeout = settings.exec_timeout_seconds if budget_seconds is None else budget_seconds
     cmd = build_command(settings, argv)
     proc = await asyncio.create_subprocess_exec(
         *cmd,
@@ -50,7 +53,7 @@ async def run_ytdlp(settings: Settings, argv: list[str]) -> ExecResult:
         start_new_session=True,  # own process group so deno etc. die with it
     )
     try:
-        out, err = await asyncio.wait_for(proc.communicate(), settings.exec_timeout_seconds)
+        out, err = await asyncio.wait_for(proc.communicate(), timeout)
     except TimeoutError:
         _kill_group(proc)
         with contextlib.suppress(Exception):
@@ -58,7 +61,7 @@ async def run_ytdlp(settings: Settings, argv: list[str]) -> ExecResult:
         return ExecResult(
             TIMEOUT_EXIT_CODE,
             "",
-            f"resolver: yt-dlp timed out after {settings.exec_timeout_seconds}s and was killed\n",
+            f"resolver: yt-dlp timed out after {timeout:.0f}s and was killed\n",
             timed_out=True,
         )
     except asyncio.CancelledError:

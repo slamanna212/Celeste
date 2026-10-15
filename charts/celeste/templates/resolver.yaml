@@ -69,6 +69,7 @@ spec:
             - {name: MAX_CONCURRENCY, value: {{ .Values.resolver.maxConcurrency | quote }}}
             - {name: ALLOWED_URL_HOSTS, value: {{ .Values.resolver.allowedUrlHosts | quote }}}
             - {name: LOG_LEVEL, value: {{ .Values.resolver.logLevel | quote }}}
+            - {name: PLAYBACK_FALLBACK_CLIENTS, value: {{ .Values.resolver.playbackFallbackClients | quote }}}
             {{- with .Values.resolver.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
