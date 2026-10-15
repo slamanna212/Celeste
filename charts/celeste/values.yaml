@@ -52,7 +52,8 @@ lavalink:
   javaOptions: "-Xmx768m"
   countryCode: US # Spotify / Apple Music catalogue country
   appleMusic:
-    enabled: true # false renders applemusic: false and omits the token (the token must be JWT-shaped or Lavalink will not boot)
+    enabled: true # false renders applemusic: false and omits the token
+    tokenFromSecret: false # false: LavaSrc scrapes the token from music.apple.com at boot and on expiry (needs egress). true: use AKV celeste-applemusic-token (must be JWT-shaped or Lavalink will not boot)
   readOnlyRootFilesystem: true # emptyDirs for plugins, logs and /tmp; baked plugins are copied in by an init container
   resources:
     requests:

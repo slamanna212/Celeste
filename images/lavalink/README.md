@@ -7,7 +7,7 @@ that forwards argv to the Celeste resolver (`POST $RESOLVER_URL/v1/exec`). See `
 - `config/application.ytdlp.yml`, `config/application.plugin.yml` canonical reference configs (Helm templates these; mount at `/opt/Lavalink/application.yml`).
 - Build: `docker build -t celeste-lavalink:dev images/lavalink` (args `LAVASRC_VERSION`, `LAVASRC_SHA256`).
 
-Runtime env: `LAVALINK_PASSWORD`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `APPLE_MUSIC_MEDIA_API_TOKEN` (must be a JWT-looking token), `RESOLVER_URL` (shim), `_JAVA_OPTIONS=-Xmx768m`;
+Runtime env: `LAVALINK_PASSWORD`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `APPLE_MUSIC_MEDIA_API_TOKEN` (optional; must be a JWT-looking token if set, otherwise LavaSrc scrapes one), `RESOLVER_URL` (shim), `_JAVA_OPTIONS=-Xmx768m`;
 plugin backend adds `YTCIPHER_PASSWORD` (+ optional OAuth/PO token vars). Port 2333; runs as uid 322.
 
 Backend `plugin` downloads youtube-plugin at startup from maven.lavalink.dev; backend `ytdlp` needs no Maven egress.

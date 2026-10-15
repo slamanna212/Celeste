@@ -66,10 +66,10 @@ Local development: Node 24 (`.nvmrc`), pnpm 10. `pnpm install`, then `pnpm build
 
 ### 3. Apple Music token
 
-Lavalink's Apple Music source uses a media API token (a JWT scraped from the Apple Music web player). Open
-<https://music.apple.com> in a browser, open dev tools -> Network, and copy the `Authorization: Bearer <token>` value
-from a request to `amp-api.music.apple.com` (the token only, without `Bearer `). It expires, so expect to rotate it in AKV
-periodically (Apple Music playback is the first thing to stop working when it lapses).
+Nothing to do by default. Lavalink's Apple Music source (LavaSrc) scrapes a media API token from
+<https://music.apple.com> at boot and fetches a new one when it expires, so Lavalink needs outbound HTTPS to
+music.apple.com. To pin a token instead, set `lavalink.appleMusic.tokenFromSecret: true` and store the JWT in
+`celeste-applemusic-token` (you then rotate it by hand when it expires).
 
 ### 4. Azure Key Vault secrets
 
@@ -81,7 +81,7 @@ Create these in the vault behind your `azure-keyvault` ClusterSecretStore. The c
 | Lavalink password (any long random string)                     | `celeste-lavalink-password`      | yes                                             |
 | Spotify client id                                              | `celeste-spotify-client-id`      | yes                                             |
 | Spotify client secret                                          | `celeste-spotify-client-secret`  | yes                                             |
-| Apple Music media API token                                    | `celeste-applemusic-token`       | yes                                             |
+| Apple Music media API token                                    | `celeste-applemusic-token`       | only if `lavalink.appleMusic.tokenFromSecret`   |
 | Web session signing secret (`openssl rand -base64 48`)         | `celeste-web-session-secret`     | yes                                             |
 | GHCR pull secret (dockerconfigjson)                            | `celeste-ghcr-pull`              | only if `pullSecret` enabled (private packages) |
 | yt-dlp cookies (Netscape format, from a burner Google account) | `celeste-ytdlp-cookies`          | optional                                        |

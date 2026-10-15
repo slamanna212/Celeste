@@ -81,7 +81,9 @@ data:
         {{- if .Values.lavalink.appleMusic.enabled }}
         applemusic:
           countryCode: "{{ .Values.lavalink.countryCode }}"
+          {{- if .Values.lavalink.appleMusic.tokenFromSecret }}
           mediaAPIToken: "${APPLE_MUSIC_MEDIA_API_TOKEN}"
+          {{- end }}
           playlistLoadLimit: 6
           albumLoadLimit: 6
         {{- end }}
