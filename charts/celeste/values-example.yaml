@@ -49,3 +49,5 @@ networkPolicy:
 metrics:
   serviceMonitor:
     enabled: false
+  grafanaDashboard:
+    enabled: false # needs serviceMonitor.enabled for the metric panels

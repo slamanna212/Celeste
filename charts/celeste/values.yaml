@@ -186,3 +186,11 @@ metrics:
     enabled: false
     interval: 30s
     labels: {} # e.g. release: kube-prometheus-stack
+  # Grafana dashboard ConfigMap for the kube-prometheus-stack / grafana chart dashboard sidecar.
+  # Metric panels need serviceMonitor.enabled; log panels read Loki (shipped by the cluster's log agent, not this chart).
+  grafanaDashboard:
+    enabled: false
+    namespace: "" # empty = release namespace (needs sidecar.dashboards.searchNamespace covering it, e.g. ALL)
+    labels:
+      grafana_dashboard: "1" # must match the sidecar's dashboards.label / labelValue
+    folder: "" # non-empty sets the grafana_folder annotation (needs sidecar.dashboards.folderAnnotation)
