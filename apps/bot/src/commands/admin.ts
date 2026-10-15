@@ -172,7 +172,7 @@ export async function handleAdmin(app: App, i: ChatInputCommandInteraction): Pro
         })
           .then((r) => r.text())
           .then((t) => t.slice(0, 200))
-          .catch(() => 'unreachable');
+          .catch((err: unknown) => `unreachable (${err instanceof Error ? err.name : 'error'})`);
       }
       const failures = (await trackFailures.get()).values.map(
         (v) => `${v.labels.source}/${v.labels.kind}: ${v.value}`,

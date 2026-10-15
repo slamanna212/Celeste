@@ -35,6 +35,7 @@ metadata:
     {{- include "celeste.labels" (dict "root" . "component" "resolver") | nindent 4 }}
 spec:
   # Only 8080 is allowed in; the bgutil sidecar (4416) is additionally bound to the pod's loopback.
+  # Lavalink resolves through it; the bot only reads /v1/version for `/admin status`.
   podSelector:
     matchLabels:
       {{- include "celeste.selectorLabels" (dict "root" . "component" "resolver") | nindent 6 }}
@@ -44,6 +45,9 @@ spec:
         - podSelector:
             matchLabels:
               {{- include "celeste.selectorLabels" (dict "root" . "component" "lavalink") | nindent 14 }}
+        - podSelector:
+            matchLabels:
+              {{- include "celeste.selectorLabels" (dict "root" . "component" "bot") | nindent 14 }}
         {{- if $mon }}
         {{- include "celeste.monitoringPeer" $np.monitoringNamespace | nindent 8 }}
         {{- end }}
