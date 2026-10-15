@@ -55,6 +55,12 @@ export function PanelProvider({ children }: { children: ReactNode }) {
       es.onopen = () => {
         attempt = 0;
         setLive(true);
+        // The stream pushes player + queue on connect but not the session; refetch it in case
+        // the initial snapshot failed.
+        api
+          .session()
+          .then((s) => !closed && setSession(s))
+          .catch(() => {});
       };
       es.addEventListener('player', (e) => {
         const p = JSON.parse((e as MessageEvent<string>).data) as PlayerStateDTO;

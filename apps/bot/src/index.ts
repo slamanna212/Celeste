@@ -110,6 +110,8 @@ async function main(): Promise<void> {
         (guildId) => void music.destroyPlayer(guildId, 'guild-denied').catch(() => undefined),
       );
       sessions.on('rotated', (s) => void np.refresh(s.guildId));
+      // The NP message from before the restart is unknown and carries the old token; post a fresh one.
+      sessions.on('restored', (s) => void np.post(s.guildId));
       settings.onChange(() => void 0);
 
       lifecycle.wire();

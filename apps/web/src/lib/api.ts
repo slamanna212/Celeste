@@ -22,13 +22,22 @@ export class ApiFailure extends Error {
   }
 }
 
+const REQUEST_TIMEOUT_MS = 10_000;
+
 let onSessionEnded: () => void = () => {};
 export function setSessionEndedHandler(fn: () => void): void {
   onSessionEnded = fn;
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const init: RequestInit = { method, credentials: 'same-origin', headers: {} };
+  // Without a timeout a request stuck behind the tunnel never settles, and the SSE
+  // reconnect loop waits on it forever.
+  const init: RequestInit = {
+    method,
+    credentials: 'same-origin',
+    headers: {},
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  };
   if (method !== 'GET') {
     (init.headers as Record<string, string>)['Content-Type'] = 'application/json';
     if (body !== undefined) init.body = JSON.stringify(body);

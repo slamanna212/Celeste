@@ -19,6 +19,8 @@ export interface ActiveSession {
 export interface SessionEvents {
   ended: [session: ActiveSession, reason: string];
   rotated: [session: ActiveSession];
+  /** Re-attached after a bot restart with a fresh token; links posted before the restart are dead. */
+  restored: [session: ActiveSession];
 }
 
 /** One playback session per guild: starts when the bot joins voice, ends when it leaves. */
@@ -143,14 +145,17 @@ export class SessionManager extends EventEmitter<SessionEvents> {
         .update(webSessions)
         .set({ tokenHash: hashToken(token), voiceChannelId: vc })
         .where(eq(webSessions.id, row.id));
-      this.track({
+      const s: ActiveSession = {
         id: row.id,
         guildId: row.guildId,
         voiceChannelId: vc,
         startedBy: row.startedBy,
         createdAt: row.createdAt,
         token,
-      });
+      };
+      this.track(s);
+      this.log.info({ guildId: s.guildId, sessionId: s.id }, 'web session restored');
+      this.emit('restored', s);
     }
   }
 }
