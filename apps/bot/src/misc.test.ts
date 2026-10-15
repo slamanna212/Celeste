@@ -5,6 +5,7 @@ import { buildCommandDefinitions } from './commands/definitions.js';
 import { loadEnv } from './env.js';
 import { nextFailureState } from './music/events.js';
 import { parseQueryPrefix } from './music/service.js';
+import { artworkOf } from './music/track.js';
 
 describe('env', () => {
   const base = {
@@ -108,5 +109,23 @@ describe('command definitions', () => {
   });
   it('/settings requires Manage Guild', () => {
     expect(defs.find((d) => d.name === 'settings')!.default_member_permissions).toBe('32');
+  });
+});
+
+describe('artworkOf', () => {
+  const info = (o: Record<string, unknown>) => ({ sourceName: 'youtube', ...o }) as never;
+  it('keeps artwork the source provided', () => {
+    expect(artworkOf(info({ identifier: 'dQw4w9WgXcQ', artworkUrl: 'https://x/a.jpg' }))).toBe(
+      'https://x/a.jpg',
+    );
+  });
+  it('derives a thumbnail for YouTube tracks without artwork', () => {
+    expect(artworkOf(info({ identifier: 'dQw4w9WgXcQ', artworkUrl: null }))).toBe(
+      'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
+    );
+  });
+  it('leaves other sources and odd identifiers alone', () => {
+    expect(artworkOf(info({ sourceName: 'soundcloud', identifier: 'dQw4w9WgXcQ' }))).toBeNull();
+    expect(artworkOf(info({ identifier: 'https://example.com/stream' }))).toBeNull();
   });
 });

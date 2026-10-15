@@ -41,6 +41,21 @@ export function requesterOf(track: AnyTrack): Requester {
  * metadata in `info` (title, artwork, uri, sourceName), so this is already the original metadata.
  * AzuraCast streams are tagged via userData.radio.
  */
+const YOUTUBE_ID = /^[\w-]{11}$/;
+
+/**
+ * LavaSrc's yt-dlp source reads `thumbnail`, which `--flat-playlist` results don't carry, so YouTube
+ * tracks arrive without artwork. The identifier is the video ID, so derive the thumbnail from it.
+ * mqdefault is 16:9 without letterbox bars and exists for every video.
+ */
+export function artworkOf(info: AnyTrack['info']): string | null {
+  if (info.artworkUrl) return info.artworkUrl;
+  if (info.sourceName === 'youtube' && info.identifier && YOUTUBE_ID.test(info.identifier)) {
+    return `https://i.ytimg.com/vi/${info.identifier}/mqdefault.jpg`;
+  }
+  return null;
+}
+
 export function toTrackInfo(track: AnyTrack): TrackInfoDTO {
   const i = track.info;
   const radio = track.userData?.radioStationId;
@@ -48,7 +63,7 @@ export function toTrackInfo(track: AnyTrack): TrackInfoDTO {
     title: i.title ?? 'Unknown title',
     author: i.author ?? '',
     uri: i.uri ?? null,
-    artworkUrl: i.artworkUrl ?? null,
+    artworkUrl: artworkOf(i),
     source: typeof radio === 'string' ? 'azuracast' : String(i.sourceName ?? 'unknown'),
     isStream: !!i.isStream,
     durationMs: i.isStream ? 0 : (i.duration ?? 0),
