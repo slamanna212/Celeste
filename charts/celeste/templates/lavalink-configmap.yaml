@@ -93,6 +93,9 @@ data:
           searchLimit: 10
           mixPlaylistLoadLimit: 25
           playlistLoadLimit: 500
+          {{- with .Values.youtube.ytdlp.customPlaybackArgs }}
+          customPlaybackArgs: {{ toJson . }}
+          {{- end }}
         {{- end }}
       {{- if $plugin }}
       youtube:
