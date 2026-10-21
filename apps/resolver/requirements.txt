@@ -5,6 +5,6 @@ yt-dlp-ejs==0.8.0
 # Must equal the bgutil sidecar image tag (chart value resolver.bgutilVersion).
 # The Dockerfile overrides this line with --build-arg BGUTIL_VERSION.
 bgutil-ytdlp-pot-provider==2.0.2
-fastapi==0.143.1
+fastapi==0.143.3
 uvicorn==0.54.0
 prometheus-client==0.26.0
