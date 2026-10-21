@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Build context: REPO ROOT.  docker build -f apps/bot/Dockerfile .
-FROM node:24-slim AS base
+FROM node:26-slim AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -22,7 +22,7 @@ RUN pnpm --filter @celeste/shared build \
 # Prune to production dependencies only (workspace deps are copied in, not symlinked).
 RUN pnpm --filter @celeste/bot --prod deploy --legacy /out
 
-FROM node:24-slim AS runtime
+FROM node:26-slim AS runtime
 ENV NODE_ENV=production \
     WEB_STATIC_DIR=/app/web \
     WEB_PORT=8080 \
