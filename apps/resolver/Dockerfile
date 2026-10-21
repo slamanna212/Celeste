@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # python:3.12-slim (glibc), pinned by digest (resolved from Docker Hub 2026-10-14).
-FROM python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+FROM python:3.15-slim@sha256:2da676046630d7bf14c6764ae1143dc7fa0377a53f94bf5a642f0b214aca5bce
 
 # Deno binary from the official image (glibc build). yt-dlp's `pin-deno` extra pins 2.9.5; yt-dlp
 # needs >= 2.3.0 (EJS wiki).
