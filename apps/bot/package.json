@@ -18,12 +18,12 @@
   },
   "dependencies": {
     "@celeste/shared": "workspace:*",
-    "@fastify/cookie": "^11.1.3",
-    "@fastify/static": "^10.1.6",
-    "discord.js": "^14.27.0",
+    "@fastify/cookie": "^11.1.5",
+    "@fastify/static": "^10.1.11",
+    "discord.js": "^14.28.1",
     "drizzle-orm": "^0.45.4",
-    "fastify": "^5.12.7",
-    "lavalink-client": "^2.11.0",
+    "fastify": "^5.12.8",
+    "lavalink-client": "^2.11.2",
     "pino": "^10.4.0",
     "postgres": "^3.4.9",
     "prom-client": "^15.1.3",
@@ -34,7 +34,7 @@
     "drizzle-kit": "^0.31.11",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vitest": "^5.0.4"
+    "vitest": "^5.1.0"
   },
   "files": [
     "dist",
